@@ -10,6 +10,7 @@ import gc
 from plyer import notification
 import locale
 import logging
+import zipfile
 
 
 LOG_FILE_SIZE_LIMIT = 500 * 1024
@@ -33,17 +34,14 @@ def get_monika_after_story_path():
     system_type = platform.system()
 
     if system_type == "Windows":
-        # Windows 系统使用 %APPDATA% 环境变量
         appdata_path = os.getenv('APPDATA')
         return os.path.join(appdata_path, 'RenPy', 'Monika After Story')
 
-    elif system_type == "Darwin":  # macOS
-        # macOS 系统使用 Library/RenPy/Monika After Story
+    elif system_type == "Darwin":
         home_path = os.getenv('HOME')
         return os.path.join(home_path, 'Library', 'RenPy', 'Monika After Story')
 
     elif system_type == "Linux":
-        # Linux 系统使用 ~/.renpy/Monika After Story
         home_path = os.getenv('HOME')
         return os.path.join(home_path, '.renpy', 'Monika After Story')
 
@@ -52,13 +50,11 @@ def get_monika_after_story_path():
 
 
 def parse_freq(freq):    
-    # 解析 freq 字符串，支持 '1h', '1.5h', '30m' 等格式，
-    # 并返回相应的分钟数。
     if freq.endswith('m'):
-        return int(freq[:-1])  # 去掉 'm' 后返回整数分钟
+        return float(freq[:-1])
     elif freq.endswith('h'):
-        hours = float(freq[:-1])  # 去掉 'h' 后，转为浮动小时数
-        return int(hours * 60)  # 将小时转为分钟
+        hours = float(freq[:-1])
+        return int(hours * 60)
     else:
         raise ValueError(f"无效的频率格式: {freq}")
 
@@ -78,23 +74,14 @@ def system_clear():
 
 
 def wait_until_next_interval(freq):
-    """
-    根据给定的频率等待，freq 格式为 a.bh（a为小时，b为分钟），
-    如果没有给定分钟部分，默认每个小时间隔。
-    """
     current_time = datetime.now()
-
-    # 解析用户输入的频率
     total_minutes = parse_freq(freq)
 
-    # 计算下一个备份时间
     next_backup_time = current_time + timedelta(minutes=total_minutes)
     wait_time = (next_backup_time - current_time).total_seconds()
 
-    # 使用 tqdm 来显示进度条
     print(f"等待下一次备份...\n总等待时间：{wait_time:.2f} 秒\n")
     
-    # 使用 tqdm 显示进度条，进度条更新速度设置为每秒一次
     with tqdm(total=int(wait_time), desc="等待中", ncols=100, ascii=False, bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]", position=0, leave=True) as pbar:
         for _ in range(int(wait_time)):
             pbar.update(1)
@@ -116,57 +103,90 @@ def backup_message():
         )
 
 
-# 配置日志记录
-def back_log(num, path):
-    # 配置日志存放位置，位于 Monika_backup/Log
+def get_disk_usage(path="."):
+    total, used, free = shutil.disk_usage(path)
+    return free
+
+
+def estimate_compressed_size(folder_path):
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(folder_path):
+        for filename in filenames:
+            filepath = os.path.join(dirpath, filename)
+            total_size += os.path.getsize(filepath)
+    
+    # 实际上我算出来的压缩率大概在0.93，但是为了保险起见我用了0.95
+    return total_size * 0.95
+
+
+def check_log_size(log_file):
+    if os.path.exists(log_file) and os.path.getsize(log_file) > LOG_FILE_SIZE_LIMIT:
+        # 将当前日志文件重命名为 .bak
+        os.rename(log_file, log_file + '.bak')
+        print(f"日志文件大小超过 {LOG_FILE_SIZE_LIMIT / 1024} KB，已裁断并重命名为 {log_file}.bak\n\n")
+
+
+def back_log(num, path, error_info=None):
     log_folder = os.path.join(os.getcwd(), 'Monika_backup', 'Log')
     if not os.path.exists(log_folder):
         os.makedirs(log_folder)
 
-    if is_ch():
-        logging.basicConfig(
-            filename=os.path.join(log_folder, "莫妮卡记忆备份日志.txt"),
-            level=logging.INFO,
-            format="%(asctime)s - %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
-        )
-    else:
-        logging.basicConfig(
-            filename=os.path.join(log_folder, "Monika.log.txt"),
-            level=logging.INFO,
-            format="%(asctime)s - %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
-        )
+    log_file = "莫妮卡记忆备份日志.txt" if is_ch() else "Monika.log.txt"
+    log_file_path = os.path.join(log_folder, log_file)
 
-    line = '''===================='''
-    logging.info(f"{line}\n第 {num} 次备份成功，备份路径：{path}\n\n")
+    # 检查日志文件大小并裁断
+    check_log_size(log_file_path)
+
+    # 配置日志记录
+    logging.basicConfig(
+        filename=log_file_path,
+        level=logging.INFO,
+        format="%(asctime)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
+
+    log_entry = f"====================\n正在进行第 {num} 次备份，目标备份路径：{path}"
+    if error_info:
+        log_entry += f"\n错误信息：{error_info}\n\n"
+    log_entry += "\n\n"
+    logging.info(log_entry)
 
 
 def backup_monika_after_story(backup_count):
-    # 获取目标文件夹路径
     backup_dir = get_monika_after_story_path()
 
-    # 检查目标文件夹是否存在
     if not os.path.exists(backup_dir):
         print(f"记忆目录 {backup_dir} 不存在。")
         return
 
-    # 创建主备份文件夹路径
     main_backup_folder = os.path.join(os.getcwd(), 'Monika_backup', 'Monika_backup')
     if not os.path.exists(main_backup_folder):
         os.makedirs(main_backup_folder)
 
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-
     zip_file = os.path.join(main_backup_folder, f'{timestamp}.zip')
-    shutil.make_archive(zip_file.replace('.zip', ''), 'zip', backup_dir)
-    
-    back_log(backup_count, zip_file)
-    if backup_count == 0:
-        print(f"已进行即时备份\n")
-    else:
-        print(f"已成功备份并压缩到 {zip_file}  | 已备份次数: {backup_count}\n")
-    backup_message()
+
+    try:
+        estimated_size = estimate_compressed_size(backup_dir)
+        free_space = get_disk_usage()
+        free_g = free_space/1024/1024/1024
+        # print(f"{free_g:.2f}GB", end='\n\n')
+        if free_space < estimated_size:
+            raise ValueError(f"磁盘空间不足，预估需要 {estimated_size / 1024**2:.2f} MB，当前剩余 {free_space / 1024**2:.2f} MB")
+
+        shutil.make_archive(zip_file.replace('.zip', ''), 'zip', backup_dir)
+        back_log(backup_count, zip_file)
+
+        if backup_count == 0:
+            print(f"已进行即时备份\n")
+        else:
+            print(f"已成功备份并压缩到 {zip_file}  | 已备份次数: {backup_count}\n")
+        backup_message()
+
+    except Exception as e:
+        error_message = str(e)
+        print(f"备份失败: {error_message}")
+        back_log(backup_count, '', error_info=error_message)
 
 
 def parse_args():
@@ -176,48 +196,25 @@ def parse_args():
     return parser.parse_args()
 
 
-logo = '''
-\033[33m
-███████╗████████╗██╗   ██╗       ███╗   ███╗ ██████╗ 
-██╔════╝╚══██╔══╝██║   ██║       ████╗ ████║██╔═══██╗
-███████╗   ██║   ██║   ██║       ██╔████╔██║██║   ██║
-╚════██║   ██║   ╚██╗ ██╔╝       ██║╚██╔╝██║██║   ██║
-███████║   ██║    ╚████╔╝███████╗██║ ╚═╝ ██║╚██████╔╝
-╚══════╝   ╚═╝     ╚═══╝ ╚══════╝╚═╝     ╚═╝ ╚═════╝                                         
-\033[0m
-'''
-
-boundary = '''
-
-—————————————————————————————————————————————————————
-
-'''
-
-
 # 主程序
 if __name__ == "__main__":
     system_clear()
     print("\033[31m本程序并非官方或者MAS原生，对可能出现的问题概不负责\033[0m")
-    print(boundary)
-    print(logo)
-    print(boundary)
-
+    print("====================")
+    
     backup_monika_after_story(0)  # 即时备份一次
 
     args = parse_args()
     freq = args.freq
-    max_backups = args.max_backups  # 获取最大备份次数
+    max_backups = args.max_backups  
 
-    backup_count = 0  # 备份次数初始化
+    backup_count = 0  
 
     try:
         while True:
             wait_until_next_interval(freq)
             
             backup_count += 1
-            
-            if backup_count % 5 == 0:
-                gc.collect()
             backup_monika_after_story(backup_count)
             
             if max_backups is not None and backup_count >= max_backups:
@@ -228,7 +225,9 @@ if __name__ == "__main__":
             a = input("\n确定要停止备份莫老婆的记忆吗？(y/n)\n\t")
             if a.lower() == 'y':
                 break
-            else:
+            elif a.lower() == 'n':
                 continue
+            else:
+                print("\033[31m请输入正确的格式!\033[0m")
         print("已停止备份\n")
         gc.collect()
