@@ -3,12 +3,16 @@ import shutil
 import time
 import argparse
 from datetime import datetime, timedelta
-from tqdm import tqdm  # 引入 tqdm 进度条库
+from tqdm import tqdm
 import sys
 import platform
 import gc
 from plyer import notification
 import locale
+import logging
+
+
+LOG_FILE_SIZE_LIMIT = 500 * 1024
 
 
 def is_ch():
@@ -66,7 +70,7 @@ def is_idle():
 
 
 def system_clear():
-    if not  is_idle():
+    if not is_idle():
         if system_check():
             os.system("cls")
         else:
@@ -112,6 +116,32 @@ def backup_message():
         )
 
 
+# 配置日志记录
+def back_log(num, path):
+    # 配置日志存放位置，位于 Monika_backup/Log
+    log_folder = os.path.join(os.getcwd(), 'Monika_backup', 'Log')
+    if not os.path.exists(log_folder):
+        os.makedirs(log_folder)
+
+    if is_ch():
+        logging.basicConfig(
+            filename=os.path.join(log_folder, "莫妮卡记忆备份日志.txt"),
+            level=logging.INFO,
+            format="%(asctime)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+    else:
+        logging.basicConfig(
+            filename=os.path.join(log_folder, "Monika.log.txt"),
+            level=logging.INFO,
+            format="%(asctime)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+
+    line = '''===================='''
+    logging.info(f"{line}\n第 {num} 次备份成功，备份路径：{path}\n\n")
+
+
 def backup_monika_after_story(backup_count):
     # 获取目标文件夹路径
     backup_dir = get_monika_after_story_path()
@@ -121,17 +151,18 @@ def backup_monika_after_story(backup_count):
         print(f"记忆目录 {backup_dir} 不存在。")
         return
 
-    backup_folder = os.path.join(os.getcwd(), 'Monika_backup')
-
-    if not os.path.exists(backup_folder):
-        os.makedirs(backup_folder)
+    # 创建主备份文件夹路径
+    main_backup_folder = os.path.join(os.getcwd(), 'Monika_backup', 'Monika_backup')
+    if not os.path.exists(main_backup_folder):
+        os.makedirs(main_backup_folder)
 
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 
-    zip_file = os.path.join(backup_folder, f'{timestamp}.zip')
+    zip_file = os.path.join(main_backup_folder, f'{timestamp}.zip')
     shutil.make_archive(zip_file.replace('.zip', ''), 'zip', backup_dir)
-
-    if backup_count  == 0:
+    
+    back_log(backup_count, zip_file)
+    if backup_count == 0:
         print(f"已进行即时备份\n")
     else:
         print(f"已成功备份并压缩到 {zip_file}  | 已备份次数: {backup_count}\n")
@@ -194,7 +225,7 @@ if __name__ == "__main__":
                 break
     except KeyboardInterrupt:
         while True:
-            a = input("确定要停止备份莫老婆的记忆吗？(y/n)\n\t")
+            a = input("\n确定要停止备份莫老婆的记忆吗？(y/n)\n\t")
             if a.lower() == 'y':
                 break
             else:
