@@ -46,7 +46,10 @@ def get_monika_after_story_path():
         return os.path.join(home_path, '.renpy', 'Monika After Story')
 
     else:
-        raise ValueError(f"不支持的操作系统: {system_type}")
+        if is_ch():
+            raise ValueError(f"\033[31m不支持的操作系统: {system_type}\033[0m")
+        else:
+            raise ValueError(f"\033[31mUnsupported operating system:{system_type}\033[0m")
 
 
 def parse_freq(freq):    
@@ -56,7 +59,10 @@ def parse_freq(freq):
         hours = float(freq[:-1])
         return int(hours * 60)
     else:
-        raise ValueError(f"无效的频率格式: {freq}")
+        if is_ch():
+            raise ValueError(f"\033[31m无效的频率格式: {freq}\033[0m")
+        else:
+            raise ValueError(f"\033[31mInvalid frequency format: {freq}\033[0m")
 
 
 def is_idle():
@@ -80,8 +86,11 @@ def wait_until_next_interval(freq):
     next_backup_time = current_time + timedelta(minutes=total_minutes)
     wait_time = (next_backup_time - current_time).total_seconds()
 
-    print(f"等待下一次备份...\n总等待时间：{wait_time:.2f} 秒\n")
-    
+    if is_ch():
+        print(f"等待下一次备份...\n总等待时间：{wait_time:.2f} 秒\n")
+    else:
+        print(f" Wait for next backup... \n Total wait time: {wait_time:.2f} seconds \n")
+        
     with tqdm(total=int(wait_time), desc="等待中", ncols=100, ascii=False, bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]", position=0, leave=True) as pbar:
         for _ in range(int(wait_time)):
             pbar.update(1)
@@ -123,7 +132,10 @@ def check_log_size(log_file):
     if os.path.exists(log_file) and os.path.getsize(log_file) > LOG_FILE_SIZE_LIMIT:
         # 将当前日志文件重命名为 .bak
         os.rename(log_file, log_file + '.bak')
-        print(f"日志文件大小超过 {LOG_FILE_SIZE_LIMIT / 1024} KB，已裁断并重命名为 {log_file}.bak\n\n")
+        if is_ch():
+            print(f"日志文件大小超过 {LOG_FILE_SIZE_LIMIT / 1024} KB\n日志已裁断\n过往日志重命名为 {log_file}.bak\n\n")
+        else:
+            print(f" log file size exceeds {LOG_FILE_SIZE_LIMIT / 1024} KB\n Log adjudicated \n Past log renamed to {log_file}.bak\n\n")
 
 
 def back_log(num, path, error_info=None):
@@ -145,9 +157,16 @@ def back_log(num, path, error_info=None):
         datefmt="%Y-%m-%d %H:%M:%S"
     )
 
-    log_entry = f"====================\n正在进行第 {num} 次备份，目标备份路径：{path}"
+    line = '===================='
+    if is_ch():
+        log_entry = f"{line}\n正在进行第 {num} 次备份，目标备份路径：{path}"
+    else:
+        log_entry = f"{line}\n {num} backup in progress, target backup path: {path}"
     if error_info:
-        log_entry += f"\n错误信息：{error_info}\n\n"
+        if is_ch():
+            log_entry += f"\n错误信息：{error_info}\n\n"
+        else:
+            log_entry += f"\nError_info：{error_info}\n\n"
     log_entry += "\n\n"
     logging.info(log_entry)
 
@@ -156,7 +175,10 @@ def backup_monika_after_story(backup_count):
     backup_dir = get_monika_after_story_path()
 
     if not os.path.exists(backup_dir):
-        print(f"记忆目录 {backup_dir} 不存在。")
+        if is_ch():
+            print(f"\033[31m记忆目录 {backup_dir} 不存在。\033[0m")
+        else:
+            print(f"\033[31mFolder {backup_dir} is not exist.\033[0m")
         return
 
     main_backup_folder = os.path.join(os.getcwd(), 'Monika_backup', 'Monika_backup')
@@ -172,7 +194,10 @@ def backup_monika_after_story(backup_count):
         free_g = free_space/1024/1024/1024
         # print(f"{free_g:.2f}GB", end='\n\n')
         if free_space < estimated_size:
-            raise ValueError(f"磁盘空间不足，预估需要 {estimated_size / 1024**2:.2f} MB，当前剩余 {free_space / 1024**2:.2f} MB")
+            if is_ch():
+                raise ValueError(f"\033[31m磁盘空间不足，预估需要 {estimated_size / 1024**2:.2f} MB，当前剩余 {free_space / 1024**2:.2f} MB\033[0m")
+            else:
+                raise ValueError(f"\033[31mInsufficient disk space {estimated_size / 1024**2:.2f} MB, the remaining disk space {free_space / 1024**2:.2f} MB\033[0m")
 
         shutil.make_archive(zip_file.replace('.zip', ''), 'zip', backup_dir)
         back_log(backup_count, zip_file)
@@ -214,13 +239,16 @@ boundary = '''
 '''
 
 
-# 主程序
-if __name__ == "__main__":
+def main():
     system_clear()
-    print("\033[31m本程序并非官方或者MAS原生，对可能出现的问题概不负责\033[0m")
-    print(boundary)
-    print(logo)
-    print(boundary)
+    if is_ch():
+        print("\033[31m本程序并非官方或者MAS原生，对可能出现的问题概不负责\033[0m")
+    else:
+        print("\033[31m] This program is not official or MAS native and is not responsible for problems that may arise \033[0m")
+    if not is_idle():
+        print(boundary)
+        print(logo)
+        print(boundary)
     
     backup_monika_after_story(0)  # 即时备份一次
 
@@ -238,11 +266,18 @@ if __name__ == "__main__":
             backup_monika_after_story(backup_count)
             
             if max_backups is not None and backup_count >= max_backups:
-                print(f"已达到最大备份次数 {max_backups}，自动停止备份。")
+                if is_ch():
+                    print(f"已达到自选最大备份次数，自动停止备份。")
+                else:
+                    print(f"Maximum number of backups {max_backups} is reached, backup is automatically stopped." )
                 break
     except KeyboardInterrupt:
         while True:
-            a = input("\n确定要停止备份莫老婆的记忆吗？(y/n)\n\t")
+            if is_ch():
+                break_content = "\n\033[33m确定要停止备份莫老婆的记忆吗？(y/n)\033[0m\n\t"
+            else:
+                break_content = "\n\033[33mAre you sure you want to stop backing up Monica's memories? (y/n)\033[0m\n\t"
+            a = input(break_content)
             if a.lower() == 'y':
                 break
             elif a.lower() == 'n':
@@ -251,3 +286,8 @@ if __name__ == "__main__":
                 print("\033[31m请输入正确的格式!\033[0m")
         print("已停止备份\n")
         gc.collect()
+
+
+# 主程序
+if __name__ == "__main__":
+    main()
