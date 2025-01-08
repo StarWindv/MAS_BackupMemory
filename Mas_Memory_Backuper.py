@@ -205,7 +205,10 @@ def backup_monika_after_story(backup_count):
         if backup_count == 0:
             print(f"已进行即时备份\n")
         else:
-            print(f"已成功备份并压缩到 {zip_file}  | 已备份次数: {backup_count}\n")
+            if is_ch():
+                print(f"已成功备份并压缩到 {zip_file}  | 已备份次数: {backup_count}\n")
+            else:
+                print(f" Successfully backed up and compressed to {zip_file} | Number of backups: {backup_count}\n")
         backup_message()
 
     except Exception as e:
@@ -218,6 +221,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Monika After Story 记忆备份脚本  \033[31m(非官方)\033[0m")
     parser.add_argument('--freq', type=str, default='30m', help='备份频率，单位：小时或分钟，格式为 a.bh (例如 1h 或 1.5h 或 90m)')
     parser.add_argument('--max-backups', type=int, default=None, help='最大备份次数，默认不限制备份次数')
+    parser.add_argument('--oncetry', choices=['True', 'False','true','false'], default=False, help='临时备份一次，不做其他操作')
     return parser.parse_args()
 
 
@@ -240,19 +244,25 @@ boundary = '''
 
 
 def main():
-    system_clear()
+    system_clear() 
     if is_ch():
         print("\033[31m本程序并非官方或者MAS原生，对可能出现的问题概不负责\033[0m")
+        print("一切信息以中文为准，英文仅供参考")
     else:
         print("\033[31m] This program is not official or MAS native and is not responsible for problems that may arise \033[0m")
+        print("All information is in Chinese and English for reference only.")
     if not is_idle():
         print(boundary)
         print(logo)
         print(boundary)
     
-    backup_monika_after_story(0)  # 即时备份一次
+    # backup_monika_after_story(0)  # 即时备份一次
 
     args = parse_args()
+    if args.oncetry.lower() == 'true':
+        backup_monika_after_story(0)  # 即时备份一次
+        return
+
     freq = args.freq
     max_backups = args.max_backups  
 
