@@ -217,14 +217,6 @@ def backup_monika_after_story(backup_count):
         back_log(backup_count, '', error_info=error_message)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="Monika After Story 记忆备份脚本  \033[31m(非官方)\033[0m")
-    parser.add_argument('--freq', type=str, default='30m', help='备份频率，单位：小时或分钟，格式为 a.bh (例如 1h 或 1.5h 或 90m)')
-    parser.add_argument('--max-backups', type=int, default=None, help='最大备份次数，默认不限制备份次数')
-    parser.add_argument('--oncetry', choices=['True', 'False','true','false'], default=False, help='临时备份一次，不做其他操作')
-    return parser.parse_args()
-
-
 logo = '''
 \033[33m
 ███████╗████████╗██╗   ██╗       ███╗   ███╗ ██████╗ 
@@ -241,6 +233,14 @@ boundary = '''
 —————————————————————————————————————————————————————
 
 '''
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Monika After Story 记忆备份脚本  \033[31m(非官方)\033[0m")
+    parser.add_argument('--freq', type=str, default='30m', help='备份频率，单位：小时或分钟，格式为 a.bh (例如 1h 或 1.5h 或 90m)')
+    parser.add_argument('--max-backups', type=int, default=None, help='最大备份次数，默认不限制备份次数')
+    parser.add_argument('--oncetry', type=str, default='False', help='临时备份一次，不做其他操作')
+    return parser.parse_args()
 
 
 def main():
