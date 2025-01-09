@@ -45,19 +45,25 @@ pip install tqdm plyer
 1. **默认备份（每30分钟一次）**：
 
    ```bash
-   python backup.py
+   python Mas_Memory_Backuper.py --oncetry true
    ```
-
+此处支持True与true，默认为False(false)
 2. **每1小时备份一次**：
 
    ```bash
-   python backup.py --freq 1h
+   python Mas_Memory_Backuper.py --freq 1h
    ```
 
 3. **每1.5小时备份一次，并且最多备份10次**：
 
    ```bash
-   python backup.py --freq 1.5h --max-backups 10
+   python Mas_Memory_Backuper.py --freq 1.5h --max-backups 10
+   ```
+
+4. **即时备份一次后停止**：
+
+   ```bash
+   python Mas_Memory_Backuper.py --freq 1.5h --max-backups 10
    ```
 
 ## 使用说明
