@@ -12,7 +12,7 @@ import locale
 import logging
 import zipfile
 
-
+# locale.setlocale(locale.LC_ALL, 'en_US.UTF-8') # 临时设置为非中文以测试对应功能
 LOG_FILE_SIZE_LIMIT = 500 * 1024
 
 
@@ -135,7 +135,7 @@ def check_log_size(log_file):
         if is_ch():
             print(f"日志文件大小超过 {LOG_FILE_SIZE_LIMIT / 1024} KB\n日志已裁断\n过往日志重命名为 {log_file}.bak\n\n")
         else:
-            print(f" log file size exceeds {LOG_FILE_SIZE_LIMIT / 1024} KB\n Log adjudicated \n Past log renamed to {log_file}.bak\n\n")
+            print(f"Log file size exceeds {LOG_FILE_SIZE_LIMIT / 1024} KB\nLog adjudicated \nPast log renamed to {log_file}.bak\n\n")
 
 
 def back_log(num, path, error_info=None):
@@ -206,9 +206,9 @@ def backup_monika_after_story(backup_count):
             print(f"已进行即时备份\n")
         else:
             if is_ch():
-                print(f"已成功备份并压缩到 {zip_file}  | 已备份次数: {backup_count}\n")
+                print(f"已成功备份并压缩到 {zip_file}\n已备份次数: {backup_count}\n")
             else:
-                print(f" Successfully backed up and compressed to {zip_file} | Number of backups: {backup_count}\n")
+                print(f" Successfully backed up and compressed to {zip_file}\n Number of backups: {backup_count}\n")
         backup_message()
 
     except Exception as e:
@@ -249,7 +249,7 @@ def main():
         print("\033[31m本程序并非官方或者MAS原生，对可能出现的问题概不负责\033[0m")
         print("一切信息以中文为准，英文仅供参考")
     else:
-        print("\033[31m] This program is not official or MAS native and is not responsible for problems that may arise \033[0m")
+        print("\033[31mThis program is not official or MAS native and is not responsible for problems that may arise \033[0m")
         print("All information is in Chinese and English for reference only.")
     if not is_idle():
         print(boundary)
