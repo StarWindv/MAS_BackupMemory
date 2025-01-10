@@ -12,6 +12,7 @@ import locale
 import logging
 import zipfile
 
+
 # locale.setlocale(locale.LC_ALL, 'en_US.UTF-8') # 临时设置为非中文以测试对应功能
 LOG_FILE_SIZE_LIMIT = 500 * 1024
 
@@ -90,11 +91,15 @@ def wait_until_next_interval(freq):
         print(f"等待下一次备份...\n总等待时间：{wait_time:.2f} 秒\n")
     else:
         print(f" Wait for next backup... \n Total wait time: {wait_time:.2f} seconds \n")
-        
-    with tqdm(total=int(wait_time), desc="等待中", ncols=100, ascii=False, bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]", position=0, leave=True) as pbar:
-        for _ in range(int(wait_time)):
-            pbar.update(1)
-            time.sleep(1)
+
+    if is_idle():
+        time.sleep(wait_time)
+    else:
+        with tqdm(total=int(wait_time), desc="等待中", ncols=100, ascii=False, bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]", position=0, leave=True) as pbar:
+            for _ in range(int(wait_time)):
+                pbar.update(1)
+                time.sleep(1)
+    gc.collect()
 
 
 def backup_message():
@@ -243,7 +248,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def main():
+def title():
     system_clear() 
     if is_ch():
         print("\033[31m本程序并非官方或者MAS原生，对可能出现的问题概不负责\033[0m")
@@ -255,9 +260,12 @@ def main():
         print(boundary)
         print(logo)
         print(boundary)
-    
-    # backup_monika_after_story(0)  # 即时备份一次
+    else:
+        backup_monika_after_story(0) # IDLE环境即时备份一次
 
+
+def main():
+    title()
     args = parse_args()
     if args.oncetry.lower() == 'true':
         backup_monika_after_story(0)  # 即时备份一次
@@ -277,9 +285,9 @@ def main():
             
             if max_backups is not None and backup_count >= max_backups:
                 if is_ch():
-                    print(f"已达到自选最大备份次数，自动停止备份。")
+                    print(f"已达到自选最大备份次数\n自动停止备份。")
                 else:
-                    print(f"Maximum number of backups {max_backups} is reached, backup is automatically stopped." )
+                    print(f"Maximum number of backups {max_backups} is reached\nbackup is automatically stopped." )
                 break
     except KeyboardInterrupt:
         while True:
