@@ -12,7 +12,6 @@ import locale
 import logging
 import zipfile
 
-
 # locale.setlocale(locale.LC_ALL, 'en_US.UTF-8') # 临时设置为非中文以测试对应功能
 LOG_FILE_SIZE_LIMIT = 500 * 1024
 
@@ -262,6 +261,8 @@ def title():
         print(boundary)
     else:
         backup_monika_after_story(0) # IDLE环境即时备份一次
+        
+    # backup_monika_after_story(0)  # 即时备份一次
 
 
 def main():
@@ -299,6 +300,10 @@ def main():
             if a.lower() == 'y':
                 break
             elif a.lower() == 'n':
+                if is_ch():
+                    print("继续备份...\n")
+                else:
+                    print("Continue Backup...\n")
                 continue
             else:
                 print("\033[31m请输入正确的格式!\033[0m")
