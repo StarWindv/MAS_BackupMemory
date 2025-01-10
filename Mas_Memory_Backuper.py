@@ -62,7 +62,7 @@ def parse_freq(freq):
         if is_ch():
             raise ValueError(f"\033[31m无效的频率格式: {freq}\033[0m")
         else:
-            raise ValueError(f"\033[31mInvalid frequency format: {freq}\033[0m")
+            raise ValueError(f"\033[31mInvalid format for frequency: {freq}\033[0m")
 
 
 def is_idle():
@@ -89,7 +89,7 @@ def wait_until_next_interval(freq):
     if is_ch():
         print(f"等待下一次备份...\n总等待时间：{wait_time:.2f} 秒\n")
     else:
-        print(f" Wait for next backup... \n Total wait time: {wait_time:.2f} seconds \n")
+        print(f" Waiting for the next backup... \n Total wait time: {wait_time:.2f} seconds \n")
 
     if is_idle():
         time.sleep(wait_time)
@@ -139,7 +139,7 @@ def check_log_size(log_file):
         if is_ch():
             print(f"日志文件大小超过 {LOG_FILE_SIZE_LIMIT / 1024} KB\n日志已裁断\n过往日志重命名为 {log_file}.bak\n\n")
         else:
-            print(f"Log file size exceeds {LOG_FILE_SIZE_LIMIT / 1024} KB\nLog adjudicated \nPast log renamed to {log_file}.bak\n\n")
+            print(f"The log file size exceeds {LOG_FILE_SIZE_LIMIT / 1024} KB\nThe log file has been truncated.\nPast log renamed to {log_file}.bak\n\n")
 
 
 def back_log(num, path, error_info=None):
@@ -182,7 +182,7 @@ def backup_monika_after_story(backup_count):
         if is_ch():
             print(f"\033[31m记忆目录 {backup_dir} 不存在。\033[0m")
         else:
-            print(f"\033[31mFolder {backup_dir} is not exist.\033[0m")
+            print(f"\033[31mFolder {backup_dir} does not exist.\033[0m")
         return
 
     main_backup_folder = os.path.join(os.getcwd(), 'Monika_backup', 'Monika_backup')
@@ -240,10 +240,19 @@ boundary = '''
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Monika After Story 记忆备份脚本  \033[31m(非官方)\033[0m")
-    parser.add_argument('--freq', type=str, default='30m', help='备份频率，单位：小时或分钟，格式为 a.bh (例如 1h 或 1.5h 或 90m)')
-    parser.add_argument('--max-backups', type=int, default=None, help='最大备份次数，默认不限制备份次数')
-    parser.add_argument('--oncetry', type=str, default='False', help='临时备份一次，不做其他操作')
+    if is_ch():
+        parser = argparse.ArgumentParser(description="Monika After Story 记忆备份脚本  \033[31m(非官方)\033[0m")
+        parser.add_argument('--freq', type=str, default='30m', help='备份频率，单位：小时或分钟，格式为 a.bh (例如 1h 或 1.5h 或 90m)')
+        parser.add_argument('--max-backups', type=int, default=None, help='最大备份次数，默认不限制备份次数')
+        parser.add_argument('--oncetry', type=str, default='False', help='临时备份一次，不做其他操作')
+        parser.add_argument('--forthwith', type=str, default='False', help='立刻备份一次后，继续进行常规备份')
+    else:
+        parser = argparse.ArgumentParser(description="Monika After Story memory backup script \033[31m(unofficial)\033[0m")
+        parser.add_argument('--freq', type=str, default='30m', help='Backup frequency, in hours or minutes (e.g., 1h, 1.5h, or 90m)')
+        parser.add_argument('--max-backups', type=int, default=None, help='Maximum number of backups,(unlimited by default)')
+        parser.add_argument('--oncetry', type=str, default='False', help=' Temporary backup, no other operation ')
+        parser.add_argument('--forthwith', type=str, default='False', help='Immediately perform a regular backup after the first backup.')
+        
     return parser.parse_args()
 
 
@@ -253,7 +262,7 @@ def title():
         print("\033[31m本程序并非官方或者MAS原生，对可能出现的问题概不负责\033[0m")
         print("一切信息以中文为准，英文仅供参考")
     else:
-        print("\033[31mThis program is not official or MAS native and is not responsible for problems that may arise \033[0m")
+        print("\033[31mThis program is unofficial and not native to MAS,.It is not responsible for any issues that may arise. \033[0m")
         print("All information is in Chinese and English for reference only.")
     if not is_idle():
         print(boundary)
@@ -271,14 +280,16 @@ def main():
     if args.oncetry.lower() == 'true':
         backup_monika_after_story(0)  # 即时备份一次
         return
+    if args.forthwith.lower() == 'true':
+        backup_monika_after_story(0)
 
     freq = args.freq
     max_backups = args.max_backups  
 
     backup_count = 0  
 
-    try:
-        while True:
+    while True:
+        try:
             wait_until_next_interval(freq)
             
             backup_count += 1
@@ -290,8 +301,7 @@ def main():
                 else:
                     print(f"Maximum number of backups {max_backups} is reached\nbackup is automatically stopped." )
                 break
-    except KeyboardInterrupt:
-        while True:
+        except KeyboardInterrupt:
             if is_ch():
                 break_content = "\n\033[33m确定要停止备份莫老婆的记忆吗？(y/n)\033[0m\n\t"
             else:
@@ -307,8 +317,10 @@ def main():
                 continue
             else:
                 print("\033[31m请输入正确的格式!\033[0m")
-        print("已停止备份\n")
-        gc.collect()
+                continue
+            
+    print("已停止备份\n")
+    gc.collect()
 
 
 # 主程序
