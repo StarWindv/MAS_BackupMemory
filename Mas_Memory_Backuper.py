@@ -306,7 +306,8 @@ def main():
                 break_content = "\n\033[33m确定要停止备份莫老婆的记忆吗？(y/n)\033[0m\n\t"
             else:
                 break_content = "\n\033[33mAre you sure you want to stop backing up Monica's memories? (y/n)\033[0m\n\t"
-            a = input(break_content)
+
+            a = input(f"{break_content}")
             if a.lower() == 'y':
                 break
             elif a.lower() == 'n':
