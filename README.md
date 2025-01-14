@@ -1,8 +1,8 @@
-<span style='color=red'>**本程序并非DDLC官方或者MAS原生，我(StarWindv)对可能出现的问题概不负责**</span>
+<span style='color=red'>**本程序并非DDLC官方或者MAS原生，我(StarWindv)对可能出现的事故问题概不负责**</span>
 
 设计初衷是因为在和莫妮卡聊天时，她说害怕丢失与我的记忆，并给出了官方文档的教程页面，而我又是一个很容易忘记备份、或者是抱有侥幸心理而不去备份的人(其实就是懒)，所以就写了这么个脚本来自动备份。
 
-<span style='color=#FF0000'>**再次声明，我对可能出现的问题概不负责，并且此工具仅支持Ren'Py和MAS原定的记忆备份路径，暂不支持自定义路径**</span>
+<span style='color=#FF0000'>**再次声明，我对可能出现的事故或问题概不负责，并且此工具仅支持Ren'Py和MAS原定的记忆备份路径，暂不支持自定义路径**</span>
 
 <span style='color=#FF0000'>**我强烈建议每一个用户在使用之前都将自己的莫妮卡记忆手动备份一次(最好能上传到U盘、网盘之类的地方)，以免出现意料之外的情况**</span>
 
@@ -42,28 +42,28 @@ pip install tqdm plyer
 
 ### 示例
 
-1. **默认备份（每30分钟一次）**：
+1. **默认备份（每30分钟一次, 无上限）**：
 
    ```bash
-   python Mas_Memory_Backuper.py --oncetry true
+   python Mas_Memory_Backuper.py
    ```
 此处支持True与true，默认为False(false)
 2. **每1小时备份一次**：
 
    ```bash
-   python Mas_Memory_Backuper.py --freq 1h
+   python Mas_Memory_Backuper.py -fq 1h
    ```
 
 3. **每1.5小时备份一次，并且最多备份10次**：
 
    ```bash
-   python Mas_Memory_Backuper.py --freq 1.5h --max-backups 10
+   python Mas_Memory_Backuper.py -fq 1.5h -mb 10
    ```
 
 4. **即时备份一次后停止**：
 
    ```bash
-   python Mas_Memory_Backuper.py --freq 1.5h --max-backups 10
+   python Mas_Memory_Backuper.py -o
    ```
 
 ## 使用说明
@@ -75,10 +75,10 @@ pip install tqdm plyer
 3. **停止备份**：如果需要停止备份过程，可以按 `Ctrl+C`，脚本会提示确认是否停止。如果确认停止，脚本会结束并释放资源。
 
 4. **备份文件**：备份文件将保存在当前工作目录的 `Monika_backup\Monika_backup` 文件夹中，每个备份文件都会根据备份时间戳命名，例如 `20250107_172445.zip`。
- - (或许你也可以选择一个你喜欢的位置来存储)
+ - (或许你也可以选择一个你喜欢的位置来存储, 但是你得自己改代码)
 5. **通知功能**：每次备份完成后，桌面会弹出一条通知，提醒备份操作已成功完成。
 
-6. **日志**：嗯，现在你可以在Monika_backup\Log\下查看备份时日志(我作了日志裁断，每500K一次，旧日志后缀会改为.bak)
+6. **日志**：嗯，现在你可以在Monika_backup\Log\下查看备份时日志(我作了日志裁断，每500K一次，旧日志后缀会改为.txt.bak)
 ## 代码结构
 
 ```
@@ -90,7 +90,7 @@ Monika_after_story_backup/
 ## 注意事项
 
 - 请确保 `Monika After Story` 的记忆数据所在的目录能够正确访问。
-- 在 macOS 和 Linux 上，路径可能不同，请确保正确配置文件目录。(我根据MAS的官方文档做了适应，但是我是Windows用户，不能去这些系统上试验，所以如果有什么问题请一定要告诉我)
+- 在 macOS 和 Linux 上，路径可能不同，请确保正确配置文件目录。(我根据MAS的官方文档做了适应，但是我是Windows用户，没有资源去这些系统上试验，所以如果有什么问题请一定要告诉我)
 - 如果备份频率非常短，可能会增加硬盘负担，请适当调整备份频率。
 
 ## 联系与支持
