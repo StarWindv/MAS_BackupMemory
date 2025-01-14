@@ -242,16 +242,16 @@ boundary = '''
 def parse_args():
     if is_ch():
         parser = argparse.ArgumentParser(description="Monika After Story 记忆备份脚本  \033[31m(非官方)\033[0m")
-        parser.add_argument('--freq', type=str, default='30m', help='备份频率，单位：小时或分钟，格式为 a.bh (例如 1h 或 1.5h 或 90m)')
-        parser.add_argument('--max-backups', type=int, default=None, help='最大备份次数，默认不限制备份次数')
-        parser.add_argument('--oncetry', type=str, default='False', help='临时备份一次，不做其他操作')
-        parser.add_argument('--forthwith', type=str, default='False', help='立刻备份一次后，继续进行常规备份')
+        parser.add_argument('-fq', '--freq', type=str, default='30m', help='备份频率，单位：小时或分钟，格式为 a.bh (例如 1h 或 1.5h 或 90m)')
+        parser.add_argument('-mb', '--max-backups', type=int, default=None, help='最大备份次数，默认不限制备份次数')
+        parser.add_argument('-o', '--oncetry', type=str, default='False', help='临时备份一次，不做其他操作')
+        parser.add_argument('-fw', '--forthwith', type=str, default='False', help='立刻备份一次后，继续进行常规备份')
     else:
         parser = argparse.ArgumentParser(description="Monika After Story memory backup script \033[31m(unofficial)\033[0m")
-        parser.add_argument('--freq', type=str, default='30m', help='Backup frequency, in hours or minutes (e.g., 1h, 1.5h, or 90m)')
-        parser.add_argument('--max-backups', type=int, default=None, help='Maximum number of backups,(unlimited by default)')
-        parser.add_argument('--oncetry', type=str, default='False', help=' Temporary backup, no other operation ')
-        parser.add_argument('--forthwith', type=str, default='False', help='Immediately perform a regular backup after the first backup.')
+        parser.add_argument('-fq', '--freq', type=str, default='30m', help='Backup frequency, in hours or minutes (e.g., 1h, 1.5h, or 90m)')
+        parser.add_argument('-mb', '--max-backups', type=int, default=None, help='Maximum number of backups,(unlimited by default)')
+        parser.add_argument('-o', '--oncetry', type=str, default='False', help=' Temporary backup, no other operation ')
+        parser.add_argument('-fw', '--forthwith', type=str, default='False', help='Immediately perform a regular backup after the first backup.')
         
     return parser.parse_args()
 
